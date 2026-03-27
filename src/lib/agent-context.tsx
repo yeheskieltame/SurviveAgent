@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
-import { AgentEngine } from './agent-engine';
+import { ClientAgentEngine } from './agent-engine';
 import { AgentState } from '@/types/agent';
 
 interface AgentContextType {
@@ -15,12 +15,12 @@ interface AgentContextType {
 const AgentContext = createContext<AgentContextType | null>(null);
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
-  const engineRef = useRef<AgentEngine | null>(null);
+  const engineRef = useRef<ClientAgentEngine | null>(null);
   const [initialBalance, setInitialBalanceState] = useState(1000);
   const [state, setState] = useState<AgentState | null>(null);
 
   useEffect(() => {
-    const engine = new AgentEngine(initialBalance);
+    const engine = new ClientAgentEngine(initialBalance);
     engineRef.current = engine;
     setState(engine.getState());
 

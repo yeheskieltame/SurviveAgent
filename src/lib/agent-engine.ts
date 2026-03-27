@@ -4,18 +4,16 @@ import {
   SubAgent,
   TerminalLog,
   Trade,
-  PortfolioSnapshot,
   StrategyType,
   AgentStatus,
 } from '@/types/agent';
 
-const STRATEGY_CONFIG: Record<StrategyType, {
+export const STRATEGY_CONFIG: Record<StrategyType, {
   name: string;
   description: string;
   icon: string;
   color: string;
   pairs: string[];
-  actions: string[];
   riskLevel: number;
 }> = {
   futures: {
@@ -24,16 +22,6 @@ const STRATEGY_CONFIG: Record<StrategyType, {
     icon: '📈',
     color: '#3b82f6',
     pairs: ['BTC/USDC', 'ETH/USDC', 'SOL/USDC', 'ARB/USDC', 'AVAX/USDC'],
-    actions: [
-      'Analyzing BTC 4H chart - bullish divergence detected',
-      'Opening 3x long ETH/USDC at support level',
-      'Taking profit on SOL/USDC long +4.2%',
-      'Setting stop-loss for BTC/USDC position',
-      'Scanning funding rates across exchanges',
-      'Detected bearish engulfing on ARB/USDC - opening short',
-      'Closing ETH position before FOMC announcement',
-      'RSI oversold on SOL - accumulating long position',
-    ],
     riskLevel: 0.7,
   },
   polymarket: {
@@ -42,16 +30,6 @@ const STRATEGY_CONFIG: Record<StrategyType, {
     icon: '🔮',
     color: '#a855f7',
     pairs: ['US Elections', 'Fed Rate', 'ETH ETF', 'BTC ATH', 'Crypto Regulation'],
-    actions: [
-      'Analyzing prediction market: "Will BTC hit $150k by Q2?"',
-      'Buying YES shares on ETH ETF approval at $0.72',
-      'Hedging election outcome positions',
-      'Selling NO shares on Fed rate cut - probability shifted',
-      'New market detected: "SOL flips BNB by market cap"',
-      'Taking profit on resolved market +180%',
-      'Analyzing social sentiment for upcoming vote',
-      'Diversifying across 5 uncorrelated prediction markets',
-    ],
     riskLevel: 0.5,
   },
   memecoin: {
@@ -60,16 +38,6 @@ const STRATEGY_CONFIG: Record<StrategyType, {
     icon: '🐸',
     color: '#fbbf24',
     pairs: ['PEPE/USDC', 'WIF/USDC', 'BONK/USDC', 'DOGE/USDC', 'SHIB/USDC'],
-    actions: [
-      'Scanning Pump.fun for new launches with high social score',
-      'Detected whale accumulation in new token - analyzing',
-      'Buying PEPE dip - social volume spike +340%',
-      'Setting trailing stop on WIF position at +25%',
-      'Analyzing token contract for honeypot indicators',
-      'New Solana memecoin trending on Twitter - researching',
-      'Taking quick profit on momentum trade +18%',
-      'Filtering rug-pull indicators on new launches',
-    ],
     riskLevel: 0.9,
   },
   airdrop: {
@@ -78,16 +46,6 @@ const STRATEGY_CONFIG: Record<StrategyType, {
     icon: '🪂',
     color: '#06b6d4',
     pairs: ['LayerZero', 'zkSync', 'Starknet', 'Scroll', 'Monad'],
-    actions: [
-      'Bridging assets to zkSync Era for activity score',
-      'Executing swap on Starknet DEX - farming interactions',
-      'Providing liquidity on Scroll testnet protocol',
-      'Claiming LayerZero airdrop allocation - processing',
-      'Interacting with new Monad testnet contracts',
-      'Cross-chain bridging via Wormhole for farming',
-      'Minting NFT on emerging L2 for eligibility',
-      'Analyzing on-chain criteria for upcoming Scroll drop',
-    ],
     riskLevel: 0.3,
   },
   arbitrage: {
@@ -96,16 +54,6 @@ const STRATEGY_CONFIG: Record<StrategyType, {
     icon: '⚡',
     color: '#00ff88',
     pairs: ['ETH Uni↔Sushi', 'USDC Arb↔Op', 'SOL Ray↔Orc', 'BTC CEX↔DEX'],
-    actions: [
-      'Price discrepancy detected: ETH $2.40 spread Uni↔Sushi',
-      'Executing atomic arb: buy Uniswap, sell SushiSwap',
-      'Cross-chain arb opportunity: USDC Arbitrum→Optimism',
-      'Flash loan arbitrage executed - profit $12.50',
-      'Monitoring 47 pairs across 8 DEXs for spreads',
-      'MEV opportunity detected in mempool - executing',
-      'Triangular arbitrage: ETH→USDC→WBTC→ETH +0.3%',
-      'Gas cost analysis: arb profitable above $5 spread',
-    ],
     riskLevel: 0.2,
   },
   defi_yield: {
@@ -114,16 +62,6 @@ const STRATEGY_CONFIG: Record<StrategyType, {
     icon: '🌾',
     color: '#22c55e',
     pairs: ['Aave ETH', 'Compound USDC', 'Curve 3Pool', 'Lido stETH', 'GMX GLP'],
-    actions: [
-      'Depositing USDC into Aave at 8.2% APY',
-      'Rebalancing Curve 3Pool position for optimal yield',
-      'Harvesting COMP rewards - compounding into position',
-      'Migrating liquidity to higher-yield Lido vault',
-      'Staking ETH via Lido - current APR 4.8%',
-      'Auto-compounding GMX GLP rewards',
-      'Analyzing impermanent loss on Uniswap V3 position',
-      'New high-yield opportunity on Pendle: 12.4% APY',
-    ],
     riskLevel: 0.3,
   },
   funding_rate: {
@@ -132,91 +70,167 @@ const STRATEGY_CONFIG: Record<StrategyType, {
     icon: '💰',
     color: '#f97316',
     pairs: ['BTC Funding', 'ETH Funding', 'SOL Funding', 'DOGE Funding'],
-    actions: [
-      'BTC funding rate +0.03% on Binance, -0.01% on dYdX - arbing',
-      'Collecting funding payment: +$8.20 on ETH short',
-      'Adjusting hedge ratio for SOL funding position',
-      'Funding rate spike detected on DOGE perps',
-      'Opening delta-neutral position: long spot + short perp',
-      'Closing low-yield funding position on ARB',
-      'New 8h funding cycle - collecting +$14.50',
-      'Scanning 20 perp markets for funding rate divergence',
-    ],
     riskLevel: 0.25,
   },
 };
 
-const COORDINATOR_MESSAGES = [
-  '🧠 Coordinator: Analyzing market conditions across all strategies...',
-  '🧠 Coordinator: Reallocating capital - shifting 5% from yield to futures',
-  '🧠 Coordinator: Risk assessment complete - all positions within limits',
-  '🧠 Coordinator: Detected high volatility - reducing memecoin exposure',
-  '🧠 Coordinator: New airdrop opportunity detected - deploying Airdrop Farmer',
-  '🧠 Coordinator: Portfolio rebalance triggered - optimizing Sharpe ratio',
-  '🧠 Coordinator: Market sentiment shifted bullish - increasing long bias',
-  '🧠 Coordinator: Cross-strategy correlation check - reducing correlated risk',
-  '🧠 Coordinator: Gas prices low - executing pending batch transactions',
-  '🧠 Coordinator: Daily P&L review: all sub-agents performing within parameters',
-  '🧠 Coordinator: Emergency check - all positions healthy, no liquidation risk',
-  '🧠 Coordinator: Deploying idle capital to DeFi yield - 15% APY opportunity',
-];
+const ALLOCATIONS: Record<StrategyType, number> = {
+  futures: 0.25,
+  arbitrage: 0.20,
+  defi_yield: 0.20,
+  funding_rate: 0.15,
+  polymarket: 0.08,
+  memecoin: 0.05,
+  airdrop: 0.07,
+};
 
-export class AgentEngine {
-  private state: AgentState;
-  private listeners: Set<(state: AgentState) => void> = new Set();
-  private intervals: NodeJS.Timeout[] = [];
+export function createInitialState(initialBalance: number): AgentState {
+  const subAgents = createSubAgents(initialBalance);
+  return {
+    coordinatorStatus: 'idle',
+    totalBalance: initialBalance,
+    initialBalance,
+    totalPnl: 0,
+    totalPnlPercent: 0,
+    subAgents,
+    activeTrades: [],
+    terminalLogs: [],
+    portfolioHistory: [{
+      timestamp: new Date(),
+      totalValue: initialBalance,
+      pnl: 0,
+      pnlPercent: 0,
+    }],
+    isRunning: false,
+  };
+}
 
-  constructor(initialBalance: number = 1000) {
-    const subAgents = this.createSubAgents(initialBalance);
-    this.state = {
-      coordinatorStatus: 'idle',
-      totalBalance: initialBalance,
-      initialBalance,
-      totalPnl: 0,
-      totalPnlPercent: 0,
-      subAgents,
-      activeTrades: [],
-      terminalLogs: [],
-      portfolioHistory: [{
-        timestamp: new Date(),
-        totalValue: initialBalance,
-        pnl: 0,
-        pnlPercent: 0,
-      }],
-      isRunning: false,
+function createSubAgents(totalBalance: number): SubAgent[] {
+  return (Object.entries(STRATEGY_CONFIG) as [StrategyType, typeof STRATEGY_CONFIG[StrategyType]][]).map(
+    ([strategy, config]) => ({
+      id: uuidv4(),
+      name: config.name,
+      strategy,
+      status: 'idle' as AgentStatus,
+      description: config.description,
+      icon: config.icon,
+      color: config.color,
+      currentTask: 'Waiting for coordinator...',
+      pnl: 0,
+      pnlPercent: 0,
+      trades: 0,
+      winRate: 0,
+      allocated: totalBalance * (ALLOCATIONS[strategy] || 0.1),
+      lastAction: 'Initialized',
+      lastActionTime: new Date(),
+    })
+  );
+}
+
+// ===== Mutation helpers for server-side engine =====
+
+export function addLog(
+  state: AgentState,
+  agentId: string,
+  agentName: string,
+  type: TerminalLog['type'],
+  message: string,
+  details?: string
+): TerminalLog {
+  const log: TerminalLog = {
+    id: uuidv4(),
+    timestamp: new Date(),
+    agentId,
+    agentName,
+    type,
+    message,
+    details,
+  };
+  state.terminalLogs = [log, ...state.terminalLogs].slice(0, 300);
+  return log;
+}
+
+export function updatePortfolio(state: AgentState) {
+  const totalValue = state.subAgents.reduce((sum, a) => sum + a.allocated, 0);
+  const totalPnl = totalValue - state.initialBalance;
+  const totalPnlPercent = (totalPnl / state.initialBalance) * 100;
+
+  state.totalBalance = totalValue;
+  state.totalPnl = totalPnl;
+  state.totalPnlPercent = totalPnlPercent;
+
+  state.portfolioHistory.push({
+    timestamp: new Date(),
+    totalValue,
+    pnl: totalPnl,
+    pnlPercent: totalPnlPercent,
+  });
+
+  if (state.portfolioHistory.length > 200) {
+    state.portfolioHistory = state.portfolioHistory.slice(-200);
+  }
+}
+
+export function applyTradeToAgent(
+  state: AgentState,
+  agent: SubAgent,
+  action: string,
+  pnlChange: number,
+  tradePair?: string,
+  tradeSide?: 'long' | 'short' | 'buy' | 'sell'
+) {
+  const config = STRATEGY_CONFIG[agent.strategy];
+
+  agent.status = 'executing';
+  agent.currentTask = action;
+  agent.lastAction = action;
+  agent.lastActionTime = new Date();
+  agent.pnl += pnlChange;
+  agent.allocated += pnlChange;
+  if (agent.allocated - agent.pnl !== 0) {
+    agent.pnlPercent = (agent.pnl / (agent.allocated - agent.pnl)) * 100;
+  }
+  agent.trades += 1;
+  agent.winRate = agent.trades > 0
+    ? Math.min(85, Math.max(35, agent.winRate + (pnlChange > 0 ? 2 : -1)))
+    : 0;
+
+  const logType: TerminalLog['type'] = pnlChange > 0 ? 'success' : pnlChange < -5 ? 'warning' : 'trade';
+  addLog(state, agent.id, `${config.icon} ${agent.name}`, logType, action);
+
+  if (tradePair) {
+    const trade: Trade = {
+      id: uuidv4(),
+      agentId: agent.id,
+      strategy: agent.strategy,
+      pair: tradePair,
+      side: tradeSide || 'buy',
+      amount: Math.abs(pnlChange) * 10,
+      entryPrice: 0,
+      currentPrice: 0,
+      pnl: pnlChange,
+      pnlPercent: agent.allocated > 0 ? (pnlChange / agent.allocated) * 100 : 0,
+      status: 'open',
+      timestamp: new Date(),
     };
+    state.activeTrades = [trade, ...state.activeTrades].slice(0, 20);
   }
 
-  private createSubAgents(totalBalance: number): SubAgent[] {
-    const allocations: Record<StrategyType, number> = {
-      futures: 0.25,
-      arbitrage: 0.20,
-      defi_yield: 0.20,
-      funding_rate: 0.15,
-      polymarket: 0.08,
-      memecoin: 0.05,
-      airdrop: 0.07,
-    };
+  updatePortfolio(state);
+}
 
-    return (Object.entries(STRATEGY_CONFIG) as [StrategyType, typeof STRATEGY_CONFIG[StrategyType]][]).map(
-      ([strategy, config]) => ({
-        id: uuidv4(),
-        name: config.name,
-        strategy,
-        status: 'idle' as AgentStatus,
-        description: config.description,
-        icon: config.icon,
-        color: config.color,
-        currentTask: 'Waiting for coordinator...',
-        pnl: 0,
-        pnlPercent: 0,
-        trades: 0,
-        winRate: 0,
-        allocated: totalBalance * (allocations[strategy] || 0.1),
-        lastAction: 'Initialized',
-        lastActionTime: new Date(),
-      })
-    );
+/**
+ * Client-side simulation engine (used when Claude CLI is not available)
+ * This provides immediate visual feedback while the real backend processes
+ */
+export class ClientAgentEngine {
+  private state: AgentState;
+  private listeners: Set<(state: AgentState) => void> = new Set();
+  private eventSource: EventSource | null = null;
+  private pollInterval: NodeJS.Timeout | null = null;
+
+  constructor(initialBalance: number = 1000) {
+    this.state = createInitialState(initialBalance);
   }
 
   getState(): AgentState {
@@ -233,151 +247,265 @@ export class AgentEngine {
     this.listeners.forEach(fn => fn(snapshot));
   }
 
-  private addLog(agentId: string, agentName: string, type: TerminalLog['type'], message: string, details?: string) {
-    const log: TerminalLog = {
-      id: uuidv4(),
-      timestamp: new Date(),
-      agentId,
-      agentName,
-      type,
-      message,
-      details,
-    };
-    this.state.terminalLogs = [log, ...this.state.terminalLogs].slice(0, 200);
-  }
-
-  private simulateAgentAction(agent: SubAgent) {
-    const config = STRATEGY_CONFIG[agent.strategy];
-    const action = config.actions[Math.floor(Math.random() * config.actions.length)];
-
-    // Update agent status
-    const statuses: AgentStatus[] = ['analyzing', 'executing', 'success'];
-    agent.status = statuses[Math.floor(Math.random() * statuses.length)];
-    agent.currentTask = action;
-    agent.lastAction = action;
-    agent.lastActionTime = new Date();
-
-    // Simulate PnL change
-    const riskFactor = config.riskLevel;
-    const pnlChange = (Math.random() - 0.45) * agent.allocated * 0.02 * riskFactor;
-    agent.pnl += pnlChange;
-    agent.allocated += pnlChange;
-    agent.pnlPercent = (agent.pnl / (agent.allocated - agent.pnl)) * 100;
-    agent.trades += Math.random() > 0.6 ? 1 : 0;
-    agent.winRate = agent.trades > 0
-      ? Math.min(85, Math.max(35, 55 + (Math.random() - 0.5) * 20))
-      : 0;
-
-    // Log types based on action
-    const logType: TerminalLog['type'] = pnlChange > 0 ? 'success' : pnlChange < -5 ? 'warning' : 'trade';
-    this.addLog(agent.id, `${config.icon} ${agent.name}`, logType, action);
-
-    // Simulate trades
-    if (Math.random() > 0.7) {
-      const pair = config.pairs[Math.floor(Math.random() * config.pairs.length)];
-      const trade: Trade = {
-        id: uuidv4(),
-        agentId: agent.id,
-        strategy: agent.strategy,
-        pair,
-        side: Math.random() > 0.5 ? 'long' : 'short',
-        amount: agent.allocated * (Math.random() * 0.1 + 0.05),
-        entryPrice: Math.random() * 50000 + 1000,
-        currentPrice: 0,
-        pnl: pnlChange,
-        pnlPercent: (pnlChange / agent.allocated) * 100,
-        status: Math.random() > 0.3 ? 'open' : 'closed',
-        timestamp: new Date(),
-      };
-      trade.currentPrice = trade.entryPrice * (1 + (Math.random() - 0.48) * 0.05);
-
-      if (trade.status === 'open') {
-        this.state.activeTrades = [trade, ...this.state.activeTrades.filter(t => t.agentId !== agent.id || Math.random() > 0.3)].slice(0, 20);
-      }
-    }
-  }
-
-  private updatePortfolio() {
-    const totalValue = this.state.subAgents.reduce((sum, a) => sum + a.allocated, 0);
-    const totalPnl = totalValue - this.state.initialBalance;
-    const totalPnlPercent = (totalPnl / this.state.initialBalance) * 100;
-
-    this.state.totalBalance = totalValue;
-    this.state.totalPnl = totalPnl;
-    this.state.totalPnlPercent = totalPnlPercent;
-
-    this.state.portfolioHistory.push({
-      timestamp: new Date(),
-      totalValue,
-      pnl: totalPnl,
-      pnlPercent: totalPnlPercent,
-    });
-
-    // Keep last 100 data points
-    if (this.state.portfolioHistory.length > 100) {
-      this.state.portfolioHistory = this.state.portfolioHistory.slice(-100);
-    }
-  }
-
-  start() {
+  async start() {
     if (this.state.isRunning) return;
     this.state.isRunning = true;
     this.state.coordinatorStatus = 'analyzing';
 
-    this.addLog('coordinator', '🧠 Coordinator', 'info', 'SurviveAgent system initialized. Starting all sub-agents...');
-    this.addLog('coordinator', '🧠 Coordinator', 'info', `Initial capital: $${this.state.initialBalance.toFixed(2)} USDC`);
-    this.addLog('coordinator', '🧠 Coordinator', 'info', 'Deploying 7 specialized sub-agents across strategies...');
+    addLog(this.state, 'coordinator', '🧠 Coordinator', 'info',
+      'SurviveAgent system booting...');
+    this.notify();
 
-    // Coordinator messages every 8-15 seconds
-    const coordInterval = setInterval(() => {
-      if (!this.state.isRunning) return;
-      const msg = COORDINATOR_MESSAGES[Math.floor(Math.random() * COORDINATOR_MESSAGES.length)];
-      this.state.coordinatorStatus = 'analyzing';
-      this.addLog('coordinator', '🧠 Coordinator', 'info', msg);
-      this.updatePortfolio();
+    // Connect to SSE stream from server
+    try {
+      this.eventSource = new EventSource('/api/stream');
+
+      this.eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          this.handleServerEvent(data);
+        } catch {
+          // ignore parse errors from heartbeats etc
+        }
+      };
+
+      this.eventSource.onerror = () => {
+        addLog(this.state, 'coordinator', '🧠 Coordinator', 'warning',
+          'SSE connection lost, falling back to polling...');
+        this.notify();
+        this.startPolling();
+      };
+    } catch {
+      this.startPolling();
+    }
+
+    // Trigger server-side agent start
+    try {
+      const res = await fetch('/api/agent/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ initialBalance: this.state.initialBalance }),
+      });
+      const data = await res.json();
+
+      if (data.claudeAvailable) {
+        addLog(this.state, 'coordinator', '🧠 Coordinator', 'success',
+          'Claude Code brain connected! AI-powered decisions active.');
+      } else {
+        addLog(this.state, 'coordinator', '🧠 Coordinator', 'warning',
+          'Claude CLI not found. Running with real market data + heuristic decisions.');
+      }
+      addLog(this.state, 'coordinator', '🧠 Coordinator', 'info',
+        `Initial capital: $${this.state.initialBalance.toFixed(2)} USDC`);
+      addLog(this.state, 'coordinator', '🧠 Coordinator', 'info',
+        'Deploying 7 specialized sub-agents. Fetching live market data...');
       this.notify();
+    } catch (err) {
+      addLog(this.state, 'coordinator', '🧠 Coordinator', 'warning',
+        'Server not responding. Running in client-side mode with live data fetch.');
+      this.notify();
+      this.startClientMode();
+    }
+  }
 
-      setTimeout(() => {
-        this.state.coordinatorStatus = 'executing';
-        this.notify();
-      }, 2000);
-    }, 8000 + Math.random() * 7000);
-    this.intervals.push(coordInterval);
+  private startPolling() {
+    if (this.pollInterval) return;
+    this.pollInterval = setInterval(async () => {
+      try {
+        const res = await fetch('/api/agent/status');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.state) {
+            this.mergeServerState(data.state);
+          }
+        }
+      } catch {
+        // server unreachable, continue client mode
+      }
+    }, 3000);
+  }
 
-    // Each agent acts on different intervals
+  private handleServerEvent(data: Record<string, unknown>) {
+    const type = data.type as string;
+
+    if (type === 'state_update' && data.state) {
+      this.mergeServerState(data.state as Partial<AgentState>);
+    } else if (type === 'log' && data.log) {
+      const log = data.log as TerminalLog;
+      this.state.terminalLogs = [log, ...this.state.terminalLogs].slice(0, 300);
+      this.notify();
+    } else if (type === 'decision' && data.analysis) {
+      addLog(this.state, 'coordinator', '🧠 Claude Brain', 'analysis',
+        data.analysis as string);
+      this.notify();
+    } else if (type === 'market_update') {
+      addLog(this.state, 'system', '📊 Market Data', 'info',
+        data.message as string || 'Market data refreshed');
+      this.notify();
+    }
+  }
+
+  private mergeServerState(serverState: Partial<AgentState>) {
+    if (serverState.subAgents) {
+      this.state.subAgents = serverState.subAgents as SubAgent[];
+    }
+    if (serverState.activeTrades) {
+      this.state.activeTrades = serverState.activeTrades as Trade[];
+    }
+    if (serverState.terminalLogs) {
+      // Merge logs, deduplicate by id
+      const existingIds = new Set(this.state.terminalLogs.map(l => l.id));
+      const newLogs = (serverState.terminalLogs as TerminalLog[]).filter(l => !existingIds.has(l.id));
+      this.state.terminalLogs = [...newLogs, ...this.state.terminalLogs].slice(0, 300);
+    }
+    if (serverState.portfolioHistory) {
+      this.state.portfolioHistory = serverState.portfolioHistory;
+    }
+    if (serverState.totalBalance !== undefined) {
+      this.state.totalBalance = serverState.totalBalance;
+      this.state.totalPnl = serverState.totalPnl || 0;
+      this.state.totalPnlPercent = serverState.totalPnlPercent || 0;
+    }
+    if (serverState.coordinatorStatus) {
+      this.state.coordinatorStatus = serverState.coordinatorStatus;
+    }
+    this.notify();
+  }
+
+  /**
+   * Client-side mode: fetches real market data directly and uses heuristics
+   * when the backend is not available
+   */
+  private async startClientMode() {
+    // Fetch real market data on the client side
+    const fetchAndLog = async () => {
+      if (!this.state.isRunning) return;
+
+      try {
+        // Fetch real crypto prices
+        const priceRes = await fetch(
+          'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true'
+        );
+        if (priceRes.ok) {
+          const prices = await priceRes.json();
+          const btcPrice = prices.bitcoin?.usd || 0;
+          const ethPrice = prices.ethereum?.usd || 0;
+          const solPrice = prices.solana?.usd || 0;
+          const btcChange = prices.bitcoin?.usd_24h_change?.toFixed(2) || '0';
+          const ethChange = prices.ethereum?.usd_24h_change?.toFixed(2) || '0';
+          const solChange = prices.solana?.usd_24h_change?.toFixed(2) || '0';
+
+          addLog(this.state, 'system', '📊 Live Prices', 'info',
+            `BTC: $${btcPrice.toLocaleString()} (${btcChange}%) | ETH: $${ethPrice.toLocaleString()} (${ethChange}%) | SOL: $${solPrice.toLocaleString()} (${solChange}%)`);
+
+          // Heuristic-based decisions from real price data
+          this.runHeuristicDecisions(prices);
+        }
+      } catch {
+        addLog(this.state, 'system', '📊 Market Data', 'warning', 'Failed to fetch live prices');
+      }
+
+      this.notify();
+    };
+
+    // Initial fetch
+    await fetchAndLog();
+
+    // Poll every 30 seconds
+    const interval = setInterval(fetchAndLog, 30000);
+    this.pollInterval = interval;
+
+    // Sub-agent activity simulation with real-ish data
     this.state.subAgents.forEach((agent, index) => {
-      const baseInterval = 3000 + index * 1500;
-      const interval = setInterval(() => {
-        if (!this.state.isRunning) return;
-        this.simulateAgentAction(agent);
-        this.updatePortfolio();
-        this.notify();
-      }, baseInterval + Math.random() * 3000);
-      this.intervals.push(interval);
-
-      // Initial action after staggered delay
       setTimeout(() => {
         const config = STRATEGY_CONFIG[agent.strategy];
         agent.status = 'analyzing';
-        agent.currentTask = 'Initializing strategy parameters...';
-        this.addLog(agent.id, `${config.icon} ${agent.name}`, 'info', `Sub-agent online. Allocated: $${agent.allocated.toFixed(2)} USDC`);
+        agent.currentTask = 'Connecting to live data feeds...';
+        addLog(this.state, agent.id, `${config.icon} ${agent.name}`, 'info',
+          `Sub-agent online. Allocated: $${agent.allocated.toFixed(2)} USDC. Fetching real data...`);
         this.notify();
-      }, 500 + index * 800);
+      }, 500 + index * 600);
     });
+  }
 
+  private runHeuristicDecisions(prices: Record<string, { usd: number; usd_24h_change?: number }>) {
+    const btcChange = prices.bitcoin?.usd_24h_change || 0;
+    const ethChange = prices.ethereum?.usd_24h_change || 0;
+
+    // Futures agent reacts to price changes
+    const futuresAgent = this.state.subAgents.find(a => a.strategy === 'futures');
+    if (futuresAgent) {
+      const direction = btcChange > 1 ? 'bullish' : btcChange < -1 ? 'bearish' : 'neutral';
+      const pnlChange = futuresAgent.allocated * (btcChange / 100) * 0.3 * STRATEGY_CONFIG.futures.riskLevel;
+      applyTradeToAgent(
+        this.state, futuresAgent,
+        `Market ${direction}: BTC ${btcChange > 0 ? '+' : ''}${btcChange.toFixed(2)}% | ${direction === 'bullish' ? 'Holding longs' : direction === 'bearish' ? 'Tightening stops' : 'Monitoring'}`,
+        pnlChange,
+        'BTC/USDC',
+        btcChange > 0 ? 'long' : 'short'
+      );
+    }
+
+    // Arbitrage agent
+    const arbAgent = this.state.subAgents.find(a => a.strategy === 'arbitrage');
+    if (arbAgent) {
+      const spread = Math.abs(btcChange - ethChange) * 0.1;
+      const pnlChange = arbAgent.allocated * spread * 0.001;
+      applyTradeToAgent(
+        this.state, arbAgent,
+        `Scanning BTC-ETH spread: ${spread.toFixed(3)}% | ${spread > 0.5 ? 'Opportunity found!' : 'Monitoring spreads'}`,
+        pnlChange
+      );
+    }
+
+    // DeFi yield agent
+    const yieldAgent = this.state.subAgents.find(a => a.strategy === 'defi_yield');
+    if (yieldAgent) {
+      const dailyYield = yieldAgent.allocated * (0.082 / 365); // ~8.2% APY
+      applyTradeToAgent(
+        this.state, yieldAgent,
+        `Yield accrued: +$${dailyYield.toFixed(4)} from Aave USDC position (8.2% APY)`,
+        dailyYield
+      );
+    }
+
+    // Funding rate agent
+    const fundingAgent = this.state.subAgents.find(a => a.strategy === 'funding_rate');
+    if (fundingAgent) {
+      const fundingRevenue = fundingAgent.allocated * 0.0001 * (Math.random() + 0.5);
+      applyTradeToAgent(
+        this.state, fundingAgent,
+        `Funding collected: +$${fundingRevenue.toFixed(4)} on delta-neutral BTC position`,
+        fundingRevenue
+      );
+    }
+
+    updatePortfolio(this.state);
     this.notify();
   }
 
   stop() {
     this.state.isRunning = false;
     this.state.coordinatorStatus = 'idle';
-    this.intervals.forEach(clearInterval);
-    this.intervals = [];
+
+    if (this.eventSource) {
+      this.eventSource.close();
+      this.eventSource = null;
+    }
+    if (this.pollInterval) {
+      clearInterval(this.pollInterval);
+      this.pollInterval = null;
+    }
+
+    // Tell server to stop
+    fetch('/api/agent/stop', { method: 'POST' }).catch(() => {});
+
     this.state.subAgents.forEach(a => {
       a.status = 'idle';
       a.currentTask = 'Stopped';
     });
-    this.addLog('coordinator', '🧠 Coordinator', 'warning', 'SurviveAgent system stopped. All sub-agents paused.');
+    addLog(this.state, 'coordinator', '🧠 Coordinator', 'warning',
+      'SurviveAgent system stopped. All sub-agents paused.');
     this.notify();
   }
 
