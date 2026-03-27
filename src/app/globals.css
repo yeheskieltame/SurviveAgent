@@ -1,0 +1,101 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-agent-bg: #0a0e17;
+  --color-agent-card: #111827;
+  --color-agent-border: #1e293b;
+  --color-agent-green: #00ff88;
+  --color-agent-red: #ff4444;
+  --color-agent-blue: #3b82f6;
+  --color-agent-yellow: #fbbf24;
+  --color-agent-purple: #a855f7;
+  --color-agent-cyan: #06b6d4;
+  --color-terminal-bg: #0d1117;
+  --color-terminal-text: #c9d1d9;
+
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+
+  --keyframes-glow:
+    0% { box-shadow: 0 0 5px rgba(0, 255, 136, 0.2); }
+    100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); };
+}
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 10, 14, 23;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0e17;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #374151;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes glow {
+  0% { box-shadow: 0 0 5px rgba(0, 255, 136, 0.2); }
+  100% { box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+/* Terminal scrollbar */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 2px;
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 15px rgba(0, 255, 136, 0.15);
+}
+
+.glow-red {
+  box-shadow: 0 0 15px rgba(255, 68, 68, 0.15);
+}
+
+/* Grid background */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(30, 41, 59, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 41, 59, 0.3) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
