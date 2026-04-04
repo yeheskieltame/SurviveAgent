@@ -39,6 +39,9 @@ import {
   SentimentAnalysis,
 } from '../brain/claude-brain';
 
+// Database
+import { TradeRecorder } from '../db/recorder';
+
 export type SSECallback = (event: string, data: unknown) => void;
 
 // ===== Sub-agent mapping to strategies =====
@@ -75,6 +78,10 @@ class ServerEngineV2 {
   // Risk
   private riskManager: RiskManager | null = null;
 
+  // Database Recorder
+  private recorder: TradeRecorder | null = null;
+  private sessionId: string = '';
+
   // Brain state
   private currentRegime: MarketRegime | null = null;
   private currentSentiment: SentimentAnalysis | null = null;
@@ -84,6 +91,7 @@ class ServerEngineV2 {
   getState() { return this.state; }
   isRunning() { return this.running; }
   isClaudeConnected() { return this.claudeAvailable; }
+  getSessionId() { return this.sessionId; }
 
   addSSEListener(cb: SSECallback) {
     this.sseListeners.add(cb);
@@ -102,6 +110,7 @@ class ServerEngineV2 {
   private log(agentId: string, agentName: string, type: TerminalLog['type'], message: string) {
     if (!this.state) return;
     addLog(this.state, agentId, agentName, type, message);
+    this.recorder?.recordLog(agentId, agentName, type, message);
     this.broadcastState();
   }
 
@@ -118,6 +127,11 @@ class ServerEngineV2 {
     // Initialize subsystems
     this.executor = new PaperExecutor(initialBalance);
     this.riskManager = new RiskManager(initialBalance);
+
+    // Initialize database recorder
+    this.sessionId = uuidv4();
+    this.recorder = new TradeRecorder(this.sessionId);
+    this.recorder.recordSessionStart(initialBalance, false); // updated after claude check
 
     // Set strategy allocations
     this.momentumStrategy.state.allocation = 25;
@@ -396,6 +410,9 @@ class ServerEngineV2 {
       const icon = config?.icon || '⚡';
 
       if (result.success) {
+        // Record trade in database
+        this.recorder?.recordTradeOpen(action, result);
+
         this.log(action.strategyName, `${icon} ${action.strategyName}`, 'success',
           `✅ ${action.type.toUpperCase()} ${action.asset} | ${formatUSD(action.amount)} | ${action.reasoning.slice(0, 100)}`);
 
@@ -476,6 +493,19 @@ class ServerEngineV2 {
       });
       if (this.state.portfolioHistory.length > 300) {
         this.state.portfolioHistory = this.state.portfolioHistory.slice(-300);
+      }
+
+      // Record snapshot every 30 seconds (not every 5s to avoid DB bloat)
+      if (Date.now() % 30000 < 5000) {
+        this.recorder?.recordSnapshot({
+          totalValue: this.executor.getEquity(),
+          totalPnl: this.state.totalPnl,
+          totalPnlPercent: this.state.totalPnlPercent,
+          openPositions: this.executor.getPositions().length,
+          totalTrades: this.executor.getExecutionLog().length,
+          winRate: this.riskManager.getStats().winRate * 100,
+          drawdown: this.riskManager.getCurrentDrawdown(),
+        });
       }
 
       this.broadcastState();
@@ -564,6 +594,12 @@ class ServerEngineV2 {
     this.polymarketCollector.stop();
 
     if (this.state) {
+      // Record session end in database
+      const equity = this.executor?.getEquity() || this.state.totalBalance;
+      const pnl = equity - this.state.initialBalance;
+      const trades = this.executor?.getExecutionLog().length || 0;
+      this.recorder?.recordSessionEnd(equity, pnl, trades);
+
       this.state.isRunning = false;
       this.state.coordinatorStatus = 'idle';
       this.state.subAgents.forEach(a => { a.status = 'idle'; a.currentTask = 'Stopped'; });
