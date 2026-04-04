@@ -18,6 +18,11 @@
   "license": "ISC",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.80.0",
+    "@jup-ag/api": "^6.0.48",
+    "@nktkas/hyperliquid": "^0.32.2",
+    "@polymarket/clob-client": "^5.8.1",
+    "@polymarket/order-utils": "^3.0.1",
+    "@solana/web3.js": "^1.98.4",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^25.5.0",
     "@types/react": "^19.2.14",
@@ -28,15 +33,18 @@
     "lucide-react": "^1.7.0",
     "next": "^14.2.35",
     "postcss": "^8.5.8",
+    "pumpdotfun-sdk": "^1.4.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "recharts": "^3.8.1",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.2",
     "typescript": "^6.0.2",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "ws": "^8.20.0"
   },
   "devDependencies": {
-    "@types/uuid": "^10.0.0"
+    "@types/uuid": "^10.0.0",
+    "@types/ws": "^8.18.1"
   }
 }
