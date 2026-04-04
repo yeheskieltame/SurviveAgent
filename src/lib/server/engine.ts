@@ -133,11 +133,22 @@ class ServerEngineV2 {
     this.recorder = new TradeRecorder(this.sessionId);
     this.recorder.recordSessionStart(initialBalance, false); // updated after claude check
 
-    // Set strategy allocations
-    this.momentumStrategy.state.allocation = 25;
-    this.fundingArbStrategy.state.allocation = 25;
-    this.yieldStrategy.state.allocation = 35;
-    this.polymarketStrategy.state.allocation = 15;
+    // Set strategy allocations from config
+    let stratConfig = { momentum: 25, funding_arb: 25, yield: 35, polymarket: 15 };
+    try {
+      const fs = await import('fs');
+      const configPath = await import('path');
+      const cfgFile = configPath.join(process.cwd(), 'data', 'config.json');
+      if (fs.existsSync(cfgFile)) {
+        const raw = fs.readFileSync(cfgFile, 'utf-8');
+        const cfg = JSON.parse(raw);
+        if (cfg.strategies) stratConfig = cfg.strategies;
+      }
+    } catch {}
+    this.momentumStrategy.state.allocation = stratConfig.momentum;
+    this.fundingArbStrategy.state.allocation = stratConfig.funding_arb;
+    this.yieldStrategy.state.allocation = stratConfig.yield;
+    this.polymarketStrategy.state.allocation = stratConfig.polymarket;
 
     // Check Claude
     this.claudeAvailable = await isClaudeAvailable();

@@ -1,0 +1,21 @@
+{
+  "mode": "paper",
+  "initialBalance": 1000,
+  "strategies": {
+    "momentum": 20,
+    "funding_arb": 30,
+    "yield": 35,
+    "polymarket": 15
+  },
+  "risk": {
+    "maxPositionSize": 15,
+    "maxDrawdown": 20,
+    "maxSingleTradeRisk": 3,
+    "maxTotalExposure": 80
+  },
+  "wallet": {
+    "address": "",
+    "privateKey": "",
+    "chain": "arbitrum"
+  }
+}

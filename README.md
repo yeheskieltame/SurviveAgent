@@ -107,15 +107,29 @@ pie title Default Capital Allocation
     "Polymarket Oracle (15%)" : 15
 ```
 
-## Quick Start
+## How to Use — Talk to the Agent
 
-### Prerequisites
+SurviveAgent is designed to be operated by talking to Claude. Open this repo with Claude Code and just talk:
+
+```
+You: "start paper trading with $1000"
+You: "change allocation to 40% yield, 30% funding, 20% momentum, 10% polymarket"
+You: "show me the trades"
+You: "how are we doing?"
+You: "go live with $10"
+```
+
+Claude reads `CLAUDE.md` and knows exactly how to operate the system.
+
+## Setup (Copy-Paste)
+
+### Step 1: Install Prerequisites
 
 ```bash
-# Node.js 18+ required
-node --version  # v18.x or higher
+# Node.js 18+
+node --version
 
-# Install Foundry (for wallet setup with cast)
+# Install Foundry (for wallet management)
 curl -L https://foundry.paradigm.xyz | bash
 foundryup
 
@@ -123,182 +137,148 @@ foundryup
 npm install -g @anthropic-ai/claude-code
 ```
 
-### 1. Clone & Install
+### Step 2: Clone & Install
 
 ```bash
 git clone https://github.com/yeheskieltame/SurviveAgent.git
 cd SurviveAgent
 npm install
-```
-
-### 2. Create a Test Wallet (using cast)
-
-```bash
-# Generate a new wallet
-cast wallet new
-
-# Output will look like:
-# Successfully created new keypair.
-# Address:     0xYOUR_ADDRESS_HERE
-# Private key: 0xYOUR_PRIVATE_KEY_HERE
-
-# SAVE BOTH! The private key is needed for live trading later.
-# For testing mode, you don't need any funds in this wallet.
-```
-
-### 3. Create Environment File
-
-```bash
+mkdir -p data
 cp .env.example .env
 ```
 
-Edit `.env`:
+### Step 3: Generate Wallet
 
 ```bash
-# Wallet (for future live trading)
-WALLET_ADDRESS=0xYOUR_ADDRESS_HERE
-WALLET_PRIVATE_KEY=0xYOUR_PRIVATE_KEY_HERE
-
-# Optional: RPC endpoints (defaults work fine for testing)
-# ETHEREUM_RPC=https://eth.llamarpc.com
-# ARBITRUM_RPC=https://arb1.arbitrum.io/rpc
-# SOLANA_RPC=https://api.mainnet-beta.solana.com
+node scripts/agent.mjs wallet --new
 ```
 
-### 4. Create Data Directory
+This generates a wallet using `cast wallet new` and saves it to `data/config.json`.
+
+### Step 4: Start the Server
 
 ```bash
-mkdir -p data
-```
-
-### 5. Start Paper Trading (Testing Mode)
-
-```bash
+# Terminal 1: Start the Next.js server
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-1. Click **"Deploy Agent"** button
-2. Watch the terminal — it shows real-time data fetching and decisions
-3. All trades are paper trades with **real market prices**
-4. Every trade is logged to `data/surviveagent.db`
-
-### 6. View Trade History
-
-Open [http://localhost:3000/trades](http://localhost:3000/trades) to see:
-
-- All paper trades with entry/exit prices
-- P&L per trade
-- Win rate and statistics
-- Session history
-
-### 7. Check Database Directly (Optional)
+### Step 5: Start Paper Trading
 
 ```bash
-# Install sqlite3 CLI if needed
-# apt install sqlite3  (Linux)
-# brew install sqlite3  (Mac)
-
-# Open the database
-sqlite3 data/surviveagent.db
-
-# View all trades
-SELECT * FROM trades ORDER BY opened_at DESC LIMIT 20;
-
-# View session summary
-SELECT * FROM sessions;
-
-# View overall stats
-SELECT
-  COUNT(*) as total_trades,
-  SUM(CASE WHEN pnl > 0 THEN 1 ELSE 0 END) as wins,
-  SUM(CASE WHEN pnl <= 0 THEN 1 ELSE 0 END) as losses,
-  ROUND(SUM(pnl), 4) as total_pnl,
-  ROUND(AVG(pnl), 4) as avg_pnl
-FROM trades WHERE status = 'closed';
-
-# View decisions made by Claude
-SELECT cycle_number, regime, sentiment, analysis
-FROM decisions ORDER BY created_at DESC LIMIT 10;
-
-# Exit
-.quit
+# Terminal 2: Use the agent CLI
+node scripts/agent.mjs start --balance 1000 --mode paper
 ```
 
-## Testing Guide (1 Day Test)
+Or just open Claude Code in this repo and say: **"start paper trading"**
 
-### What Happens in Paper Mode
+### Step 6: Monitor
 
-1. **Real data, fake trades**: Prices come from Binance/CoinGecko live. Trades are simulated with real prices including slippage (0.05-0.2%) and fees (0.05%).
+```bash
+# Check status
+node scripts/agent.mjs status
 
-2. **Everything is logged**: Every trade, every decision, every portfolio snapshot goes to SQLite.
+# View trades
+node scripts/agent.mjs trades
 
-3. **No funds at risk**: Paper mode uses no real wallet. It simulates positions and tracks what would have happened.
+# View stats
+node scripts/agent.mjs stats
+
+# Open dashboard
+open http://localhost:3000
+
+# Open trade history
+open http://localhost:3000/trades
+```
+
+### Step 7: Check Database
+
+```bash
+# All trades
+sqlite3 data/surviveagent.db "SELECT opened_at, strategy, asset, side, amount, pnl, reasoning FROM trades ORDER BY opened_at DESC LIMIT 10;"
+
+# P&L by strategy
+sqlite3 data/surviveagent.db "SELECT strategy, COUNT(*) as trades, ROUND(SUM(pnl),4) as pnl FROM trades WHERE status='closed' GROUP BY strategy;"
+
+# Session summary
+sqlite3 data/surviveagent.db "SELECT * FROM sessions;"
+```
+
+## Agent CLI Reference
+
+```bash
+# Status
+node scripts/agent.mjs status
+
+# Start/Stop
+node scripts/agent.mjs start --balance 1000 --mode paper
+node scripts/agent.mjs start --balance 10 --mode live
+node scripts/agent.mjs stop
+
+# Trades & Stats
+node scripts/agent.mjs trades --limit 50
+node scripts/agent.mjs stats
+
+# Configuration
+node scripts/agent.mjs config
+node scripts/agent.mjs config --set '{"momentum":30,"funding_arb":30,"yield":25,"polymarket":15}'
+node scripts/agent.mjs config --mode paper --balance 500
+node scripts/agent.mjs config --risk '{"maxDrawdown":15,"maxSingleTradeRisk":2}'
+
+# Wallet
+node scripts/agent.mjs wallet
+node scripts/agent.mjs wallet --new
+```
+
+## Testing Guide (1 Day Paper Test)
+
+### What Happens
+
+- **Real data, simulated trades**: Prices from Binance/CoinGecko live. Trades include realistic slippage (0.05-0.2%) and fees (0.05%).
+- **Everything logged**: Every trade, decision, and portfolio snapshot saved to SQLite.
+- **No funds at risk**: Paper mode does not touch any wallet.
 
 ### What to Watch For
 
-| Metric | Good Sign | Bad Sign |
-|--------|-----------|----------|
+| Metric | Good | Bad |
+|--------|------|-----|
 | Win Rate | >50% | <40% |
-| Avg P&L/Trade | Positive | Consistently negative |
+| Total P&L | Positive | Negative trend |
 | Max Drawdown | <10% | >20% (circuit breaker fires) |
-| Sharpe Ratio | >1.0 | <0 |
-| Funding Revenue | Steady positive | N/A (should always be positive) |
-| Yield Accrual | Steady positive | N/A (should always be positive) |
+| Funding Revenue | Steady positive | Should always be positive |
+| Yield Accrual | Steady positive | Should always be positive |
 
 ### Expected Behavior (24h)
 
-- **Funding Rate Arb**: Should generate small, steady positive returns (~0.01-0.05% per 8h funding cycle)
-- **DeFi Yield**: Should show yield accrual (~8-15% APY, so ~$0.002/day on $10)
-- **Momentum**: May or may not trade (only trades on >3% moves with sentiment alignment)
-- **Polymarket**: May or may not trade (only when Claude finds mispriced markets)
+- **Funding Rate Arb**: Small, steady returns (~0.01-0.05% per 8h funding cycle)
+- **DeFi Yield**: Yield accrual (~8-15% APY)
+- **Momentum**: Trades only on >3% moves with sentiment confirmation
+- **Polymarket**: Trades only when Claude finds mispriced markets
 
 ## Going Live with $10 USDC
 
-After 1 day of paper testing, if results look good:
-
-### 1. Fund Your Wallet
+After paper testing looks good:
 
 ```bash
-# Check your wallet address
-echo $WALLET_ADDRESS
+# 1. Create wallet (if not done)
+node scripts/agent.mjs wallet --new
 
-# Send 10 USDC to your wallet on Arbitrum (cheapest gas)
-# Use any exchange or bridge to send USDC to the address
+# 2. Send 10 USDC to wallet address on Arbitrum
+#    (use any exchange or bridge)
+
+# 3. Send ~$0.10 ETH for gas on Arbitrum
+
+# 4. Verify balance
+node scripts/agent.mjs wallet
+
+# 5. Configure and go live
+node scripts/agent.mjs config --mode live --balance 10
+node scripts/agent.mjs start
+
+# 6. Monitor
+node scripts/agent.mjs status
 ```
 
-### 2. Verify Balance
-
-```bash
-# Check USDC balance on Arbitrum
-cast call \
-  0xaf88d065e77c8cC2239327C5EDb3A432268e5831 \
-  "balanceOf(address)(uint256)" \
-  $WALLET_ADDRESS \
-  --rpc-url https://arb1.arbitrum.io/rpc
-
-# Should show: 10000000 (10 USDC with 6 decimals)
-```
-
-### 3. Check ETH for Gas
-
-```bash
-# You need a tiny bit of ETH for gas on Arbitrum (~$0.10 worth)
-cast balance $WALLET_ADDRESS --rpc-url https://arb1.arbitrum.io/rpc
-```
-
-### 4. Switch to Live Mode
-
-> **WARNING**: Live mode executes real transactions. Start with $10. Never risk more than you can afford to lose.
-
-```bash
-# In .env, add:
-TRADING_MODE=live
-
-# Restart
-npm run dev
-```
+Or just tell Claude: **"go live with $10 on arbitrum"**
 
 ## Database Schema
 
